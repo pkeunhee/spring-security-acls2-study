@@ -31,12 +31,14 @@ import com.security.service.AclManager;
 @Transactional
 @Service
 public class AclManagerImpl implements AclManager {
-	
+
 	private static final Logger log = LoggerFactory.getLogger(AclManagerImpl.class);
-	
-	@Autowired private MutableAclService aclService;
-	@Autowired private JdbcTemplate jdbcTemplate;
-	
+
+	@Autowired
+	private MutableAclService aclService;
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
+
 	@Override
 	public <T> void addPermission(Class<T> clazz, Serializable identifier, Sid sid, Permission permission) {
 		ObjectIdentity identity = new ObjectIdentityImpl(clazz, identifier);
@@ -44,29 +46,29 @@ public class AclManagerImpl implements AclManager {
 		isPermissionGranted(permission, sid, acl);
 		aclService.updateAcl(acl);
 	}
-	
+
 	@Override
 	public <T> void removePermission(Class<T> clazz, Serializable identifier, Sid sid, Permission permission) {
 		ObjectIdentity identity = new ObjectIdentityImpl(clazz.getCanonicalName(), identifier);
 		MutableAcl acl = (MutableAcl) aclService.readAclById(identity);
-		
+
 		AccessControlEntry[] entries = acl.getEntries().toArray(new AccessControlEntry[acl.getEntries().size()]);
-		
+
 		for (int i = 0; i < acl.getEntries().size(); i++) {
 			if (entries[i].getSid().equals(sid) && entries[i].getPermission().equals(permission)) {
 				acl.deleteAce(i);
 			}
 		}
-		
+
 		aclService.updateAcl(acl);
 	}
-	
+
 	@Override
 	public <T> boolean isPermissionGranted(Class<T> clazz, Serializable identifier, Sid sid, Permission permission) {
 		ObjectIdentity identity = new ObjectIdentityImpl(clazz.getCanonicalName(), identifier);
 		MutableAcl acl = (MutableAcl) aclService.readAclById(identity);
 		boolean isGranted = false;
-		
+
 		try {
 			isGranted = acl.isGranted(Arrays.asList(permission), Arrays.asList(sid), false);
 		} catch (NotFoundException e) {
@@ -74,10 +76,10 @@ public class AclManagerImpl implements AclManager {
 		} catch (UnloadedSidException e) {
 			log.error("Unloaded Sid", e);
 		}
-		
+
 		return isGranted;
 	}
-	
+
 	private MutableAcl isNewAcl(ObjectIdentity identity) {
 		MutableAcl acl;
 		try {

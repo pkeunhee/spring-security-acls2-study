@@ -18,8 +18,9 @@ import java.util.List;
 @Service
 @Transactional
 public class MenuServiceImpl implements MenuService {
-	
-	@Autowired private MenuRepository menuRepository;
+
+	@Autowired
+	private MenuRepository menuRepository;
 
 	@Override
 	public List<Menu> findAll() {
@@ -49,6 +50,7 @@ public class MenuServiceImpl implements MenuService {
 	@PreAuthorize("hasRole('ROLE_ADMIN')")
 	@PreFilter("hasPermission(filterObject, 'administration')")
 	public List<Menu> testFilterMenu(List<Menu> menus) {
+		// administration 권한인것만 필터된다. administration 권한이 하나도 없으면 Exception 발생함
 		return menus;
 	}
 }

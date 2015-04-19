@@ -13,32 +13,28 @@ import java.util.List;
  */
 @Entity
 public class Menu implements Serializable {
-
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 7807420781078501470L;
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column
 	private Long id;
-	
+
 	@Column
 	private String name;
-	
+
 	@Column
 	private String path;
-	
+
 	@JsonManagedReference
 	@OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
 	private List<Menu> menus;
-	
+
 	@JsonBackReference
 	@ManyToOne(cascade = CascadeType.ALL)
 	@JoinColumn(name = "parent_id")
 	private Menu parent;
-	
+
 	public Long getId() {
 		return id;
 	}
@@ -70,7 +66,7 @@ public class Menu implements Serializable {
 	public void setMenus(List<Menu> menus) {
 		this.menus = menus;
 	}
-	
+
 	public Menu getParent() {
 		return parent;
 	}

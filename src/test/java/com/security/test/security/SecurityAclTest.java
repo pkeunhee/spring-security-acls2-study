@@ -34,30 +34,35 @@ import com.security.test.util.AbstractSecurityTest;
  *
  */
 public class SecurityAclTest extends AbstractSecurityTest {
-	
-	@Autowired private MenuService menuService;
-	@Autowired private UserGroupManager userGroupManager;
-	@Autowired private SecurityTestService securityTestService;
-	@Autowired private JdbcUserDetailsManager jdbcUserDetailsManager;
-	@Autowired private AclManager aclManager;
-	
+	@Autowired
+	private MenuService menuService;
+	@Autowired
+	private UserGroupManager userGroupManager;
+	@Autowired
+	private SecurityTestService securityTestService;
+	@Autowired
+	private JdbcUserDetailsManager jdbcUserDetailsManager;
+	@Autowired
+	private AclManager aclManager;
+
 	private static final String USER_ADMIN = "admin";
 	private static final String USER_USER = "user";
-	
+
 	private Menu menu = null;
-	
-	@Rule public ExpectedException exception = ExpectedException.none();
-	
+
+	@Rule
+	public ExpectedException exception = ExpectedException.none();
+
 	@Before
 	public void setup() {
 		userGroupManager.createUserWithAuthoriy(USER_ADMIN, "ROLE_ADMIN");
 		userGroupManager.createUserWithAuthoriy(USER_USER, "ROLE_USER");
-		
-    	Menu p1 = new Menu();
+
+		Menu p1 = new Menu();
 		p1.setName("Menu");
 		p1.setPath("/menu");
 		menu = menuService.saveOrUpdate(p1);
-		
+
 		userGroupManager.setAuthentication(USER_ADMIN);
 		aclManager.addPermission(Menu.class, menu.getId(), new PrincipalSid(USER_ADMIN), BasePermission.ADMINISTRATION);
 	}
@@ -70,81 +75,89 @@ public class SecurityAclTest extends AbstractSecurityTest {
 		aclManager.deleteAllGrantedAcl();
 		SecurityContextHolder.getContext().setAuthentication(null);
 	}
-	
+
 	@Test
 	public void testUserHasNoAccessToMenu() {
 		boolean isGranted = aclManager.isPermissionGranted(Menu.class, menu.getId(), new PrincipalSid(USER_USER), BasePermission.READ);
 		assertThat(isGranted, is(false));
 	}
-	
+
 	@Test
 	public void testAdminHasNoAccessToMenuAsRead() {
+		// admin 은 administration 권한이 있고 read 권한은 없다.
 		boolean isGranted = aclManager.isPermissionGranted(Menu.class, menu.getId(), new PrincipalSid(USER_ADMIN), BasePermission.READ);
 		assertThat(isGranted, is(false));
 	}
-	
+
 	@Test
 	public void testAdminHasAccessToMenuAsAdministration() {
+		// admin 은 administration 권한은 있다.
 		boolean isGranted = aclManager.isPermissionGranted(Menu.class, menu.getId(), new PrincipalSid(USER_ADMIN), BasePermission.ADMINISTRATION);
 		assertThat(isGranted, is(true));
 	}
-	
+
 	@Test
 	public void testAdminHasAccessToMethodHasRoleAdmin() {
+		// role 체크
 		userGroupManager.setAuthentication(USER_ADMIN);
 		assertThat(securityTestService.testHasRoleAdmin(), is(true));
 	}
-	
+
 	@Test
 	public void testUserHasNoAccessToMethodHasRoleAdmin() {
+		// role 이 아닐때 exception 발생
 		userGroupManager.setAuthentication(USER_USER);
 		exception.expect(AccessDeniedException.class);
 		securityTestService.testHasRoleAdmin();
 	}
-	
+
 	@Test
 	public void testAdminHasAccessToMethodHasPermissionAdministration() {
 		userGroupManager.setAuthentication(USER_ADMIN);
+		// admin 은 menu 에 대해 administration 권한을 가진다.
 		assertThat(securityTestService.testHasPermissionAdministrationOnMenu(menu), is(true));
 	}
-	
+
 	@Test
 	public void testUserHasNoAccessToMethodHasPermissionAdministration() {
 		userGroupManager.setAuthentication(USER_USER);
 		exception.expect(AccessDeniedException.class);
 		securityTestService.testHasPermissionAdministrationOnMenu(menu);
 	}
-	
+
 	@Test
 	public void testUserHasNoAccessToMethodHasPermissionRead() {
 		userGroupManager.setAuthentication(USER_USER);
 		exception.expect(AccessDeniedException.class);
 		securityTestService.testHasPermissionReadOnMenu(menu);
 	}
-	
+
 	@Test
 	public void testAdminHasNoAccessToMethodPermissionRead() {
 		userGroupManager.setAuthentication(USER_ADMIN);
 		exception.expect(AccessDeniedException.class);
 		securityTestService.testHasPermissionReadOnMenu(menu);
 	}
-	
+
 	@Test
 	public void testUserHasAclPermissionBasedOnRole() {
+		// user 에 read 권한 추가
 		aclManager.addPermission(Menu.class, menu.getId(), new GrantedAuthoritySid("ROLE_USER"), BasePermission.READ);
 		userGroupManager.setAuthentication(USER_USER);
 		assertThat(securityTestService.testHasPermissionReadOnMenu(menu), is(true));
 	}
-	
+
 	@Test
 	public void testRemoveAclPermissionFromUser() {
+		// 권한 추가
 		aclManager.addPermission(Menu.class, menu.getId(), new GrantedAuthoritySid("ROLE_USER"), BasePermission.READ);
 		userGroupManager.setAuthentication(USER_USER);
 		assertThat(securityTestService.testHasPermissionReadOnMenu(menu), is(true));
-		
+
+		// 권한 삭제
 		userGroupManager.setAuthentication(USER_ADMIN);
 		aclManager.removePermission(Menu.class, menu.getId(), new GrantedAuthoritySid("ROLE_USER"), BasePermission.READ);
-		
+
 		userGroupManager.setAuthentication(USER_USER);
 		exception.expect(AccessDeniedException.class);
 		securityTestService.testHasPermissionReadOnMenu(menu);
@@ -152,7 +165,6 @@ public class SecurityAclTest extends AbstractSecurityTest {
 
 	@Test
 	public void testFilterList() {
-
 		menuService.deleteAll();
 		aclManager.deleteAllGrantedAcl();
 
@@ -177,7 +189,7 @@ public class SecurityAclTest extends AbstractSecurityTest {
 		exception.expect(AccessDeniedException.class);
 		menuService.testFilterMenu(menuService.findAll());
 	}
-	
+
 	@Test
 	public void encodePassword() {
 		StandardPasswordEncoder encoder = new StandardPasswordEncoder("test");
